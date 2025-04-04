@@ -32,29 +32,28 @@ class ProfileProvider extends ChangeNotifier {
 
   // Fetch user profile from Firestore
   Future<void> fetchUserProfile() async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
+    if (user == null) return;
     try {
-      if (user != null) {
-        DocumentSnapshot userDoc =
-            await _firestore.collection('users').doc(user!.uid).get();
-        if (userDoc.exists) {
-          _name = userDoc['name'] ?? "";
-          _email = userDoc['email'] ?? user!.email ?? "";
-          _photoUrl = userDoc['profileImageUrl'] ?? "";
-        }
+      final doc = await _firestore.collection('users').doc(user!.uid).get();
+      if (doc.exists) {
+        final data = doc.data() ?? {};
+        _name = data['name'] ?? '';
+        _email = data['email'] ?? user!.email ?? '';
+        _photoUrl = data['profileImageUrl'] ?? '';
+        _uid = user!.uid;
       }
     } catch (e) {
-      print("Error fetching profile: $e");
+      debugPrint("❌ Error fetching profile: $e");
     }
-    _isLoading = false;
-    notifyListeners();
+    _setLoading(false);
   }
 
   // Update user profile
   Future<void> updateProfile({required String name, File? image}) async {
-    _isLoading = true;
-    notifyListeners();
+    if (user == null) return;
+
+    _setLoading(true);
     try {
       String imageUrl = _photoUrl;
       if (image != null) {
@@ -69,23 +68,22 @@ class ProfileProvider extends ChangeNotifier {
 
       _name = name;
       _photoUrl = imageUrl;
-      notifyListeners();
     } catch (e) {
-      print("Error updating profile: $e");
+      debugPrint("❌ Error updating profile: $e");
     }
     _isLoading = false;
-    notifyListeners();
+    _setLoading(false);
   }
 
   // Pick image from gallery
   Future<File?> pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedFile != null) {
-      return File(pickedFile.path);
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      return picked != null ? File(picked.path) : null;
+    } catch (e) {
+      debugPrint("❌ Error picking image: $e");
+      return null;
     }
-    return null;
   }
 
   // Upload image to Firebase Storage
@@ -98,8 +96,13 @@ class ProfileProvider extends ChangeNotifier {
       TaskSnapshot taskSnapshot = await uploadTask;
       return await taskSnapshot.ref.getDownloadURL();
     } catch (e) {
-      print("Error uploading image: $e");
+      debugPrint("❌ Error uploading image: $e");
       return "";
     }
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 }

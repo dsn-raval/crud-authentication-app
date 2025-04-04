@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:crud_authentication_task/modules/auth/providers/auth_provider.dart';
 import 'package:crud_authentication_task/modules/settings/providers/profile_provider.dart';
+import 'package:crud_authentication_task/widgets/common_textfiled.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,19 +12,31 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  File? image1;
-  bool imageChange = false;
-  String Base64string = '';
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
 
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    final authProvider = context.read<AuthProvider>();
+    _nameController = TextEditingController(
+      text: authProvider.user?.displayName ?? '',
+    );
+    _emailController = TextEditingController(
+      text: authProvider.user?.email ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final profileProvider = Provider.of<ProfileProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
-    _nameController.text = authProvider.user!.displayName!;
-    _emailController.text = authProvider.user!.email!;
     return Scaffold(
       appBar: AppBar(title: Text("P R O F I L E"), centerTitle: true),
       body: Padding(
@@ -40,22 +51,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       : AssetImage("assets/avtar.png") as ImageProvider,
             ),
             SizedBox(height: 40),
-            TextField(
-              ignorePointers: true,
+            CommonTextFiled(
               controller: _nameController,
-              decoration: InputDecoration(
-                labelText: "Name",
-                border: OutlineInputBorder(),
-              ),
+              isEnable: true,
+              labelText: "Name",
             ),
             SizedBox(height: 30),
-            TextField(
-              ignorePointers: true,
+            CommonTextFiled(
               controller: _emailController,
-              decoration: InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(),
-              ),
+              isEnable: true,
+              labelText: "Email",
             ),
             SizedBox(height: 10),
           ],

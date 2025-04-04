@@ -9,12 +9,12 @@ import 'dart:convert';
 
 class ApiProvider extends ChangeNotifier {
   final String apiUrl =
-      "https://caff34b586307cc3d780.free.beeceptor.com/api/users/";
+      "https://ca16f8c4f6e9163e0490.free.beeceptor.com/api/users/";
+  final Box localBox = Hive.box('localData');
+  final Map<String, String> _headers = {"Content-Type": "application/json"};
 
   List<dynamic> _datas = [];
   List<dynamic> get datas => _datas;
-
-  final Box localBox = Hive.box('localData');
 
   List<dynamic> filteredData = [];
   bool _isFetchingData = false;
@@ -23,29 +23,32 @@ class ApiProvider extends ChangeNotifier {
     if (_isFetchingData) return;
     _isFetchingData = true;
     notifyListeners();
+
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         _datas = json.decode(response.body);
         localBox.put('cachedData', _datas);
-        filteredData = List.from(_datas);
       } else {
         log("Get Api Status code : ${response.statusCode.toString()}");
+        _datas = localBox.get('cachedData', defaultValue: []);
       }
     } catch (e) {
       print("Error fetching datas: $e");
       _datas = localBox.get('cachedData', defaultValue: []);
     }
+
+    filteredData = List.from(_datas);
     _isFetchingData = false;
     notifyListeners();
   }
 
-  Future<void> addData(String title, String body) async {
+  Future<void> addData(String title, String body, String image) async {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
-        body: json.encode({"title": title, "body": body}),
+        headers: _headers,
+        body: json.encode({"title": title, "body": body, "image": image}),
       );
       if (response.statusCode == 200) {
         showSnackBar(isSuccess: true, message: "Create Successfully");
@@ -59,12 +62,17 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateData(String id, String title, String body) async {
+  Future<void> updateData(
+    String id,
+    String title,
+    String body,
+    String image,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse("$apiUrl$id"),
-        headers: {"Content-Type": "application/json"},
-        body: json.encode({"title": title, "body": body}),
+        headers: _headers,
+        body: json.encode({"title": title, "body": body, "image": image}),
       );
       if (response.statusCode == 200) {
         showSnackBar(isSuccess: true, message: "Update successfully");
@@ -82,7 +90,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.patch(
         Uri.parse("$apiUrl$id"),
-        headers: {"Content-Type": "application/json"},
+        headers: _headers,
         body: json.encode({"title": title, "body": body, "id": id}),
       );
       if (response.statusCode == 200) {
@@ -100,7 +108,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.delete(
         Uri.parse("$apiUrl$id"),
-        headers: {"Content-Type": "application/json"},
+        headers: _headers,
       );
       log("$apiUrl$id");
       if (response.statusCode == 200) {
@@ -124,7 +132,7 @@ class ApiProvider extends ChangeNotifier {
     const String serverKey = "AIzaSyDlFzt_w7tL7jM7cQbWvvUfOvaRIbGyMbw";
     const String fcmUrl = "https://fcm.googleapis.com/fcm/send";
 
-    final Map<String, dynamic> notificationData = {
+    final payload = {
       "to": token,
       "notification": {"title": title, "body": body, "sound": "default"},
       "data": {
@@ -142,7 +150,7 @@ class ApiProvider extends ChangeNotifier {
           "Content-Type": "application/json",
           "Authorization": "key=$serverKey",
         },
-        body: json.encode(notificationData),
+        body: json.encode(payload),
       );
 
       if (response.statusCode == 200) {
