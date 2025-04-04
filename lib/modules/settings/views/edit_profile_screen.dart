@@ -27,7 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameController.text = authProvider.user!.displayName!;
     _emailController.text = authProvider.user!.email!;
     return Scaffold(
-      appBar: AppBar(title: Text("P R O F I L E")),
+      appBar: AppBar(title: Text("P R O F I L E"), centerTitle: true),
       body: Padding(
         padding: EdgeInsets.all(20),
         child: Column(

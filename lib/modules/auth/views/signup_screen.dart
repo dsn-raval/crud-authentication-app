@@ -119,19 +119,29 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(height: 10),
                 Text("or continue with", style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 20),
-                _socialButton(
-                  text: "Continue with Google",
-                  color: Colors.white,
-                  textColor: Colors.black,
-                  imagePath: "assets/google.png",
-                  onTap: () async {
-                    try {
-                      await authProvider.signInWithGoogle();
-                    } catch (e) {
-                      showSnackBar(message: e.toString());
-                    }
-                  },
-                ),
+                authProvider.isLoading
+                    ? CircularProgressIndicator(color: Colors.lightBlue)
+                    : _socialButton(
+                      text: "Continue with Google",
+                      color: Colors.white,
+                      textColor: Colors.black,
+                      imagePath: "assets/google.png",
+                      onTap: () async {
+                        try {
+                          await authProvider.signInWithGoogle();
+                          if (authProvider.user != null) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HomeScreen(),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          showSnackBar(message: e.toString());
+                        }
+                      },
+                    ),
               ],
             ),
           ],
